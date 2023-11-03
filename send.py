@@ -9,7 +9,7 @@ from kafka import KafkaProducer, KafkaServer
 
 DATASET_DIR = 'datasets/img_align_celeba/img_align_celeba'
 LABEL_PATH = 'datasets/labels.json'
-TOPIC_NAME = 'dataset'
+TOPIC_NAME = 'celeba'
 
 
 
@@ -31,7 +31,7 @@ def encode(img_path: str) -> str:
 
 
 # Get the list of image names and labels
-imgs = os.listdir(DATASET_DIR)
+imgs = sorted(os.listdir(DATASET_DIR))
 with open(LABEL_PATH, 'r') as f:
     labels = json.load(f)
 
@@ -51,9 +51,13 @@ producer.start()
 
 
 # Send the images and labels to the Kafka topic
-for img in tqdm(imgs[:10]):
+for img in tqdm(imgs[:40_000]):
     producer.write(encode(img))
-    producer.write('#')
+    producer.write('\n')
+
+
+# Send complete message
+producer.write('Complete')
 
 # Close the producer
 producer.close()

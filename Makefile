@@ -14,3 +14,9 @@ create:
 
 delete:
 	@$(KAFKA_PATH)/bin/kafka-topics.sh --delete --bootstrap-server localhost:9092 --topic $(topic)
+
+clean:
+	@rm -rf d1/*
+	@rm -rf d2/*
+	@rm -rf d3/*
+	@rm -rf d4/*
