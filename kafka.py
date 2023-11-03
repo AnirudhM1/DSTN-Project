@@ -222,12 +222,14 @@ class KafkaConsumer:
         self.server_name = server_name
         self.process = None
     
-    def start(self):
+    def start(self, offset: int):
         consumer_script_path = os.path.join(BASE_DIR, 'bin/kafka-console-consumer.sh')
         command = [
             'bash', consumer_script_path,
             '--bootstrap-server', f"{self.server_name}:{KAFKA_SERVER_PORT}",
-            '--topic', self.topic_name
+            '--topic', self.topic_name,
+            '--partition', '0',
+            '--offset', str(offset),
         ]
         self.process = subprocess.Popen(
             command,
@@ -248,4 +250,4 @@ class KafkaConsumer:
         if self.process is None:
             raise Exception("Consumer not started")
         self.process.stdin.close()
-        self.process.wait()
+        self.process.kill()
