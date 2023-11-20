@@ -14,6 +14,7 @@ create:
 
 delete:
 	@$(KAFKA_PATH)/bin/kafka-topics.sh --delete --bootstrap-server localhost:9092 --topic $(topic)
+	@$(KAFKA_PATH)/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
 
 clean:
 	@rm -rf d1/*

@@ -1,17 +1,18 @@
 import os
-import sys
+import logging
 import json
+import argparse
 
 from kafka import KafkaConsumer
 import socket
 
-TOPIC_NAME = "celeba"
-SAVE_DIR = "datasets"
-CHUNK_SIZE = 50
+TOPIC_NAME = None
+SAVE_DIR = None
+CHUNK_SIZE = None
 
 STORAGE_SERVERS = ["localhost", "localhost", "localhost", "localhost"]
 STORAGE_PORTS = [8000, 8001, 8002, 8003]
-CURR = int(sys.argv[1])
+CURR = None # To be set by the argument parser
 
 
 # Utility functions
@@ -49,16 +50,13 @@ class Receiver:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Bind the socket to the port
             s.bind((STORAGE_SERVERS[CURR], STORAGE_PORTS[CURR]))
-            print("Starting server on port:", STORAGE_PORTS[CURR])
+            logging.info(f"Starting server on port: {STORAGE_PORTS[CURR]}")
 
             # Listen for incoming connections
             s.listen()
-            print("Server is listening...")
+            logging.info("Server is listening...\n")
 
             while True:
-                print("\n\n###############################################")
-                print("Is head node:", self.is_head_node)
-                print("###############################################\n")
 
                 if self.is_head_node:
                     # Start Head Node duties
@@ -76,19 +74,18 @@ class Receiver:
                 # The current node will continue to be the head node
 
                 if self.is_head_node:
-                    print("Current node continues to be the head node\n")
                     continue
 
                 # The current node is not the head node
 
-                print("\nWaiting for connection...\n")
+                logging.info("Waiting for connection...\n")
 
                 # The storage server will now wait till it is the head node
                 # The storage server will know that it is the head node when
                 # it receives a connection from the previous head node
 
                 connection, client_address = s.accept()
-                print("Connection received from:", client_address)
+                logging.info(f"Connection received from: {client_address}")
 
                 # Send the acknowledgement. This is done to ensure that the
                 # previous head node knows that the connection has been received
@@ -110,7 +107,7 @@ class Receiver:
             bool: If the topic is complete
         """
 
-        print("Starting Head Node duties...\n")
+        logging.info("Starting Head Node duties...\n")
 
         # Create a Kafka consumer
         consumer = KafkaConsumer(topic_name=TOPIC_NAME)
@@ -122,12 +119,12 @@ class Receiver:
         topic_completed = self.read_and_save_data(consumer)
 
         # Close the consumer
-        print("Closing Kafka consumer...")
+        logging.info("Closing Kafka consumer...")
         consumer.close()
 
         # Check if the topic is complete
         if topic_completed:
-            print("Topic Complete\n\nExiting...")
+            logging.info("Exiting...")
             return True
 
         # This part is executed only if the topic is not complete
@@ -152,7 +149,7 @@ class Receiver:
 
             # Check if the topic is complete
             if "complete" in data.lower():
-                print("\n\n Topic Complete\n\n")
+                logging.info("Topic Complete\n\n")
                 return True
 
             # Decode the data
@@ -165,7 +162,7 @@ class Receiver:
             with open(os.path.join(SAVE_DIR, file_name), "w") as f:
                 json.dump(data, f)
 
-        print("Chunk Complete\n")
+        logging.info("Chunk Complete\n")
         return False
 
     def transfer_head_node_status(self):
@@ -174,7 +171,7 @@ class Receiver:
         # A node is considered alive if it is listening on its port
         # and responds with an awknowledgement when a connection is made
 
-        print("Sending head node status to the next node...\n")
+        logging.info("Sending head node status to the next node...\n")
 
         next_server = get_next_server(CURR)
         while next_server != CURR:
@@ -192,7 +189,7 @@ class Receiver:
 
                     # Send the offset
                     sender.sendall(f"{self.offset + CHUNK_SIZE}".encode())
-                    print("Next node found:", next_server)
+                    logging.info(f"Next node found: {next_server}")
 
                 except:
                     # For whatever reason, if the node is not alive, then an error will be raised
@@ -208,20 +205,119 @@ class Receiver:
         # The current node will continue to be the head node
 
         if self.is_head_node:
-            print("All nodes are down!\n")
-
+            logging.info("All nodes are down!\n")
+            logging.info("Current node continues to be the head node\n")
         else:
-            print("Head node status transferred\n")
+            logging.info("Head node status transferred\n")
+
+
+def parse_args() -> argparse.Namespace:
+    # Add argument parser
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "id",
+        type=int,
+        help="The id of the node. This is used to identify the node"
+    )
+    
+    parser.add_argument(
+        "--head",
+        action="store_true",
+        help="The node is a head node"
+    )
+
+    parser.add_argument(
+        "--topic",
+        type=str,
+        required=False,
+        default="celeba",
+        help="The name of the Kafka topic"
+    )
+
+    parser.add_argument(
+        "--save-dir",
+        type=str,
+        required=False,
+        default="dataset",
+        help="The directory to save the data to"
+    )
+
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        required=False,
+        default=50,
+        help="The size of the chunk to be received"
+    )
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    return args
+
+
+def set_logging():
+    # Create the logging directory
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
+    # Get root logger
+    logger = logging.getLogger()
+
+    # Set the level of the logger
+    logger.setLevel(logging.INFO)
+
+    # Create a formatter for the console handler
+    console_formatter = logging.Formatter("[%(levelname)s]: %(message)s")
+
+    # Create a console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(console_formatter)
+
+    # Add the console handler to the logger
+    logger.addHandler(console_handler)
+
+    # Create a formatter for the file handler
+    file_formatter = logging.Formatter("%(asctime)s: [%(levelname)s]: %(message)s")
+
+    # Create a file handler
+    file_handler = logging.FileHandler("logs/receive.log")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(file_formatter)
+
+    # Add the file handler to the logger
+    logger.addHandler(file_handler)
 
 
 if __name__ == "__main__":
-    # Check if the node is the head node
-    is_head_node = len(sys.argv) == 3 and (
-        sys.argv[2][0].lower() == "h" or sys.argv[2][0].lower() == "t"
-    )
+
+    args = parse_args()
+
+    # Set the global constants
+    CURR = args.id
+    TOPIC_NAME = args.topic
+    SAVE_DIR = args.save_dir
+    CHUNK_SIZE = args.chunk_size
+
+    # This is done to prevent some issues across operating systems
+    STORAGE_SERVERS[CURR] = "localhost"
+
+    # Set logging
+    set_logging()
+
+    # Log the arguments
+    logging.info("Arguments:")
+    logging.info(f"ID: {CURR}")
+    logging.info(f"Head Node: {args.head}")
+    logging.info(f"Topic Name: {TOPIC_NAME}")
+    logging.info(f"Save Directory: {SAVE_DIR}")
+    logging.info(f"Chunk Size: {CHUNK_SIZE}\n")
+
 
     # Create a Receiver object
-    receiver = Receiver(is_head_node)
+    receiver = Receiver(args.head)
 
     # Start the receiver
     receiver.start()
