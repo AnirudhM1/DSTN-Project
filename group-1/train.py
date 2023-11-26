@@ -64,9 +64,9 @@ class CelebaDataset(Dataset):
         return img, float(label)
 
 
-img_dir = "datasets/img_align_celeba/img_align_celeba"
-label_path = "datasets/labels.json"
-partition_path = "datasets/partition.json"
+img_dir = "../datasets/img_align_celeba/img_align_celeba"
+label_path = "../datasets/labels.json"
+partition_path = "../datasets/partition.json"
 
 train_dataset = CelebaDataset(img_dir, label_path, partition_path, split="train")
 val_dataset = CelebaDataset(img_dir, label_path, partition_path, split="val")
