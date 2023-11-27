@@ -8,7 +8,7 @@ import sys
 import json
 import socket
 
-from kafka import KafkaProducer, KafkaConsumer
+from kafka_new import KafkaProducer, KafkaConsumer
 
 TOPIC_NAME = None
 REQ_TOPIC_NAME = None
@@ -52,13 +52,12 @@ class Streamer:
 
         # Create a Kafka producer to write data to the Kafka topic
         self.producer = KafkaProducer(topic_name=TOPIC_NAME)
-        self.producer.start()
 
         # Create a Kafka consumer to read requests from the Kafka topic
         self.consumer = KafkaConsumer(topic_name=REQ_TOPIC_NAME)
 
     
-    def fetch_batch(self, batch: List[int]) -> List[Dict]:
+    def fetch_batch(self, batch: List[int]) -> List[str]:
         """Function to fetch the batch of data to be prepared for streaming
 
         Args:
@@ -79,7 +78,7 @@ class Streamer:
         
         return prepared_batch
     
-    def write_batch(self, batch: List[Dict]):
+    def write_batch(self, batch: List[str]):
         """Function to write a batch of data to the Kafka topic
 
         Args:
@@ -87,7 +86,6 @@ class Streamer:
         """
         for data in batch:
             self.producer.write(data)
-            self.producer.write("\n")
     
     def start(self):
         """Starts a TCP server and listens for incoming connections"""
@@ -185,8 +183,7 @@ class Streamer:
         logging.info("Starting head node duties\n")
 
         # Randomly sample a batch of data to send
-        # batch = random.sample(files, BATCH_SIZE)
-        batch = ['000052']
+        batch = random.sample(files, BATCH_SIZE)
 
         # Determine the storage server which contains each item of the batch
         servers = self.get_servers(batch)
@@ -303,11 +300,7 @@ class Streamer:
         """This function waits for a request from group 1 for the batch of data"""
 
         # Read the request at the current offset from the Kafka topic
-        self.consumer.start(self.offset)
-
-        request = self.consumer.read()
-
-        self.consumer.close()
+        request = self.consumer.read(self.offset)
 
         if request != 'BATCH':
             logging.error(f"Invalid request received: {request}")

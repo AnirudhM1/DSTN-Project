@@ -5,7 +5,8 @@ import sys
 import json
 import socket
 
-from kafka import KafkaProducer
+# from kafka_new import KafkaProducer, KafkaConsumer
+from confluent_kafka import Producer, Consumer, TopicPartition
 
 TOPIC_NAME = "stream"
 SAVE_DIR = "dataset"
@@ -27,12 +28,17 @@ metadata: Dict[str, List[int]] = json.load(open("metadata.json", "r"))
 files = list(metadata.keys())
 
 
+consumer = KafkaConsumer(topic_name="req")
+
+
+
 
 class Streamer:
     def __init__(self, is_head_node: bool):
         self.is_head_node = is_head_node
         self.producer = KafkaProducer(topic_name=TOPIC_NAME)
         self.producer.start()
+        self.offset = 0
     
     def write_batch(self, batch: List[int]):
         for name in batch:
@@ -89,6 +95,7 @@ class Streamer:
                 # Make the node the head node
                 if "TOKEN" in data:
                     connection.sendall(b"ACK")
+                    self.offset = int(connection.recv(1024).decode())
                     connection.close()
                     self.is_head_node = True
                     continue
@@ -110,14 +117,30 @@ class Streamer:
         # Determine the storage server which contains each item of the batch
         servers = self.get_storage_servers(batch)
 
+        # Wait for Batch Request from group 1
+        print("Waiting for batch reqest...")
+        self.wait_for_batch_request()
+        print("Batch request received")
+
         # Send the batch to the respective storage servers
         self.send_data_to_servers(servers)
 
         # Write the batch to the Kafka topic
+        # for _ in range(2):
         self.write_batch(servers[CURR])
 
         # Make the next node the head node
         self.transfer_head_node_status()
+    
+
+    def wait_for_batch_request(self):
+        # consumer.close()
+        consumer.start(self.offset)
+        req = consumer.read()
+        if "BATCH" not in req:
+            raise ValueError(f"Invalid request received: {req}")
+        
+        consumer.close()
     
 
     def send_data_to_servers(self, servers: List[List[int]]):
@@ -176,6 +199,7 @@ class Streamer:
                     response = sender.recv(1024).decode()
                     if response != "ACK":
                         raise ConnectionRefusedError("Invalid response received")
+                    sender.sendall(str(self.offset+1).encode())
                     print("Next node found:", next)
 
                 except:
