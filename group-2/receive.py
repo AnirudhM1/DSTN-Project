@@ -12,7 +12,7 @@ CHUNK_SIZE = None
 
 STORAGE_SERVERS = ["localhost", "localhost", "localhost", "localhost"]
 STORAGE_PORTS = [8000, 8001, 8002, 8003]
-CURR = None # To be set by the argument parser
+CURR = None  # To be set by the argument parser
 
 
 # Utility functions
@@ -57,7 +57,6 @@ class Receiver:
             logging.info("Server is listening...\n")
 
             while True:
-
                 if self.is_head_node:
                     # Start Head Node duties
                     topic_completed = self.head_node_duties()
@@ -213,26 +212,20 @@ class Receiver:
 
 def parse_args() -> argparse.Namespace:
     # Add argument parser
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Receive data from Group 1")
 
     parser.add_argument(
-        "id",
-        type=int,
-        help="The id of the node. This is used to identify the node"
+        "id", type=int, help="The id of the node. This is used to identify the node"
     )
-    
-    parser.add_argument(
-        "--head",
-        action="store_true",
-        help="The node is a head node"
-    )
+
+    parser.add_argument("--head", action="store_true", help="The node is a head node")
 
     parser.add_argument(
         "--topic",
         type=str,
         required=False,
         default="celeba",
-        help="The name of the Kafka topic"
+        help="The name of the Kafka topic",
     )
 
     parser.add_argument(
@@ -240,7 +233,7 @@ def parse_args() -> argparse.Namespace:
         type=str,
         required=False,
         default="dataset",
-        help="The directory to save the data to"
+        help="The directory to save the data to",
     )
 
     parser.add_argument(
@@ -248,7 +241,7 @@ def parse_args() -> argparse.Namespace:
         type=int,
         required=False,
         default=50,
-        help="The size of the chunk to be received"
+        help="The size of the chunk to be received",
     )
 
     # Parse the arguments
@@ -292,7 +285,6 @@ def set_logging():
 
 
 if __name__ == "__main__":
-
     args = parse_args()
 
     # Set the global constants
@@ -314,7 +306,6 @@ if __name__ == "__main__":
     logging.info(f"Topic Name: {TOPIC_NAME}")
     logging.info(f"Save Directory: {SAVE_DIR}")
     logging.info(f"Chunk Size: {CHUNK_SIZE}\n")
-
 
     # Create a Receiver object
     receiver = Receiver(args.head)

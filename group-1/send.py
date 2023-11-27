@@ -5,10 +5,10 @@ from tqdm.auto import tqdm
 import torchvision.transforms as T
 from torchvision.io import read_image
 
-from ..kafka import KafkaProducer, KafkaServer
+from kafka import KafkaProducer, KafkaServer
 
-DATASET_DIR = "../datasets/img_align_celeba/img_align_celeba"
-LABEL_PATH = "../datasets/labels.json"
+DATASET_DIR = "datasets/img_align_celeba/img_align_celeba"
+LABEL_PATH = "datasets/labels.json"
 TOPIC_NAME = "celeba"
 
 

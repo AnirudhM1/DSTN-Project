@@ -45,6 +45,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 model = model.to(device)
 
+
 @torch.no_grad()
 def accuracy(y_pred: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     y_pred = torch.sigmoid(y_pred)
@@ -77,5 +78,3 @@ for batch in train_loader:
             "train_accuracy": acc.detach().cpu().item(),
         }
     )
-
-

@@ -7,8 +7,8 @@ import socket
 
 from kafka import KafkaProducer
 
-TOPIC_NAME = "fetch"
-SAVE_DIR = "datasets"
+TOPIC_NAME = "stream"
+SAVE_DIR = "dataset"
 BATCH_SIZE = 1
 
 STORAGE_SERVERS = ["localhost", "localhost", "localhost", "localhost"]
@@ -111,7 +111,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     sender.sendall(encode(server).encode())
 
             # Write the batch to the Kafka topic
-            write_batch(batch)
+            write_batch(servers[CURR])
 
             # Make the next node the head node
 
