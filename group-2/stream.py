@@ -8,7 +8,7 @@ import sys
 import json
 import socket
 
-from kafka_new import KafkaProducer, KafkaConsumer
+from kafka import KafkaProducer, KafkaConsumer
 
 TOPIC_NAME = None
 REQ_TOPIC_NAME = None

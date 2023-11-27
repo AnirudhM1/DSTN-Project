@@ -111,15 +111,8 @@ class Receiver:
         # Create a Kafka consumer
         consumer = KafkaConsumer(topic_name=TOPIC_NAME)
 
-        # Start the consumer
-        consumer.start(self.offset)
-
         # Read data from the Kafka topic until the chunk is complete or the topic is complete
         topic_completed = self.read_and_save_data(consumer)
-
-        # Close the consumer
-        logging.info("Closing Kafka consumer...")
-        consumer.close()
 
         # Check if the topic is complete
         if topic_completed:
@@ -144,7 +137,7 @@ class Receiver:
         """
 
         for _ in range(CHUNK_SIZE):
-            data = consumer.read()
+            data = consumer.read(self.offset)
 
             # Check if the topic is complete
             if "complete" in data.lower():

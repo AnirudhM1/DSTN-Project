@@ -42,11 +42,7 @@ producer.start()
 # Send the images and labels to the Kafka topic
 for img in tqdm(imgs[:1000]):
     producer.write(encode(img))
-    producer.write("\n")
 
 
 # Send complete message
 producer.write("Complete")
-
-# Close the producer
-producer.close()
