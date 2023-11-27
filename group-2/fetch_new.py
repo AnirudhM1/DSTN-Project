@@ -70,7 +70,7 @@ class Streamer:
                     self.head_node_duties()
 
                 # If the node is not the head node, it is a storage node
-                
+
                 # Wait for a connection
                 connection, client_address = s.accept()
                 print("Connection received from:", client_address)
@@ -81,14 +81,16 @@ class Streamer:
                 # If the data is 'ALIVE', the node is just being checked for liveness
                 # Do nothing in this case
                 if "ALIVE" in data:
+                    connection.sendall(b"ACK")
                     connection.close()
                     continue
 
                 # If the data is 'TOKEN', the node is the next head node
                 # Make the node the head node
                 if "TOKEN" in data:
-                    self.is_head_node = True
+                    connection.sendall(b"ACK")
                     connection.close()
+                    self.is_head_node = True
                     continue
 
                 # In all other cases, the data is a batch of data
@@ -147,6 +149,9 @@ class Streamer:
                     try:
                         sender.connect((STORAGE_SERVERS[node], STORAGE_PORTS[node]))
                         sender.sendall("ALIVE".encode())
+                        response = sender.recv(1024).decode()
+                        if response != "ACK":
+                            raise ConnectionRefusedError("Invalid response received")
                         # Connection successful
                         break
                     except ConnectionRefusedError:
@@ -168,6 +173,9 @@ class Streamer:
                 try:
                     sender.connect((STORAGE_SERVERS[next], STORAGE_PORTS[next]))
                     sender.sendall("TOKEN".encode())
+                    response = sender.recv(1024).decode()
+                    if response != "ACK":
+                        raise ConnectionRefusedError("Invalid response received")
                     print("Next node found:", next)
 
                 except:
