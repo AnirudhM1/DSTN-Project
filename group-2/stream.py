@@ -263,12 +263,10 @@ class Streamer:
 
         for i, server in enumerate(servers):
             # If the data is empty, or is the current server, skip the server
-            print(i, server)
             if i == CURR or not server:
                 continue
 
             sender = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            print(f"Connecting to: {STORAGE_SERVERS[i]}:{STORAGE_PORTS[i]}")
             sender.connect((STORAGE_SERVERS[i], STORAGE_PORTS[i]))
             senders.append((i, sender))
 
@@ -417,7 +415,7 @@ def parse_args() -> argparse.Namespace:
         "--batch-size",
         type=int,
         required=False,
-        default=1,
+        default=64,
         help="The size of the batch to be sent",
     )
 

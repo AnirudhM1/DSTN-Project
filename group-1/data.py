@@ -1,8 +1,8 @@
 import json
 from typing import List, Tuple
 import torch
-from torchdata import IterDataPipe
-from kafka import KafkaConsumer, KafkaProducer
+from torchdata.datapipes.iter import IterDataPipe
+from kafka import KafkaConsumer, KafkaProducer, clear_topic
 
 
 class KafkaDataPipe(IterDataPipe):
@@ -30,11 +30,12 @@ class KafkaBatcherDataPipe(IterDataPipe):
     This DataPipe is responsible for requesting data from Group 2 and the batching logic.
     """
 
-    def __init__(self, dp: IterDataPipe, producer: KafkaProducer, batch_size: int = 64):
+    def __init__(self, dp: IterDataPipe, producer: KafkaProducer, batch_size: int = 64, req_topic: str = "req"):
         super().__init__()
         self.dp = dp
         self.producer = producer
         self.batch_size = batch_size
+        self.req_topic = req_topic
 
     def __iter__(self):
         batch = []
@@ -59,9 +60,8 @@ class KafkaBatcherDataPipe(IterDataPipe):
     def request_batch(self):
         """This function is responsible for clearing the kafka topic and requesting a new batch of data from Group 2"""
 
-        # TODO - Clear the Kafka topic
-
-        self.producer.write("BATCH\n")
+        clear_topic(self.req_topic)
+        self.producer.write("BATCH")
 
     def prepare_batch(
         self, batch: List[Tuple[torch.Tensor, torch.Tensor]]
