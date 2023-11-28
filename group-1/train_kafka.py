@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torchvision
 
-from data import KafkaBatcherDataPipe, KafkaDataPipe, KafkaDeserializerDataPipe
+from data import KafkaBatcherDataPipe, KafkaDataPipe, KafkaDeserializerDataPipe, PrefetchDataLoader
 from kafka import KafkaConsumer, KafkaProducer
 
 import os
@@ -36,6 +36,7 @@ dp = KafkaDeserializerDataPipe(dp)
 dp = KafkaBatcherDataPipe(dp, consumer, producer, batch_size=BATCH_SIZE)
 
 train_loader = DataLoader(dp, batch_size=None, num_workers=0)
+train_loader = PrefetchDataLoader(train_loader)
 model = torchvision.models.resnet18()
 model.fc = nn.Linear(512, 1, bias=True)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -71,7 +72,10 @@ for batch in train_loader:
     optimizer.step()
     progress_bar.update(1)
 
+    print(f"Loss: {loss.detach().cpu().item():.4f}, Accuracy: {acc.detach().cpu().item():.4f}")
+    
     if batch_count == NUM_BATCHES:
+        train_loader.close()
         break
 
     # wandb.log(
@@ -81,4 +85,3 @@ for batch in train_loader:
     #     }
     # )
 
-    print(f"Loss: {loss.detach().cpu().item():.4f}, Accuracy: {acc.detach().cpu().item():.4f}")

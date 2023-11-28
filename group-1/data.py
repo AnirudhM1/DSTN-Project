@@ -1,4 +1,6 @@
 import json
+import threading
+from collections import deque
 from typing import List, Tuple
 import torch
 from torchdata.datapipes.iter import IterDataPipe
@@ -23,6 +25,22 @@ class KafkaDataPipe(IterDataPipe):
             data = json.loads(data)
             yield data
 
+class KafkaDeserializerDataPipe(IterDataPipe):
+    """Converts the stream of data from a dictionary to a pytorch tensor with the correct label"""
+
+    def __init__(self, dp: IterDataPipe):
+        super().__init__()
+        self.dp = dp
+
+    def __iter__(self):
+        for data in self.dp:
+            image = data["image"]
+            label = data["label"]
+
+            image = torch.tensor(image)
+            label = torch.tensor(label)
+
+            yield image, label
 
 class KafkaBatcherDataPipe(IterDataPipe):
     """Converts the stream of data from Kafka into batches
@@ -77,19 +95,45 @@ class KafkaBatcherDataPipe(IterDataPipe):
         return batch
 
 
-class KafkaDeserializerDataPipe(IterDataPipe):
-    """Converts the stream of data from a dictionary to a pytorch tensor with the correct label"""
 
-    def __init__(self, dp: IterDataPipe):
-        super().__init__()
-        self.dp = dp
+class PrefetchDataLoader:
+    def __init__(self, dataloader, prefetch_factor=2):
+        self.dataloader = dataloader
+        self.prefetch_factor = prefetch_factor
+        self.buffer = deque(maxlen=prefetch_factor)
+
+        self.empty_sem = threading.Semaphore(prefetch_factor)
+        self.full_sem = threading.Semaphore(0)
+        self.buffer_lock = threading.Lock()
+
+        self.exit_event = threading.Event()
+        self.worker_thread = threading.Thread(target=self.fetch, args=(self.exit_event,))
+        self.worker_thread.daemon = True
+        self.worker_thread.start()
+
+    def fetch(self, exit_event: threading.Event):
+        while not exit_event.is_set():
+            data = next(iter(self.dataloader))
+
+            self.empty_sem.acquire() # Increment the empty slots in the buffer
+
+            with self.buffer_lock:
+                self.buffer.append(data)
+            
+            self.full_sem.release() # Decrement the full slots in the buffer
+    
 
     def __iter__(self):
-        for data in self.dp:
-            image = data["image"]
-            label = data["label"]
+        
+        while True:
+            self.full_sem.acquire() # Decrement the full slots in the buffer
 
-            image = torch.tensor(image)
-            label = torch.tensor(label)
+            with self.buffer_lock:
+                data = self.buffer.popleft()
+            
+            self.empty_sem.release() # Increment the empty slots in the buffer
 
-            yield image, label
+            yield data
+    
+    def close(self):
+        self.exit_event.set()
