@@ -30,26 +30,27 @@ class KafkaBatcherDataPipe(IterDataPipe):
     This DataPipe is responsible for requesting data from Group 2 and the batching logic.
     """
 
-    def __init__(self, dp: IterDataPipe, producer: KafkaProducer, batch_size: int = 64, req_topic: str = "req"):
+    def __init__(self, dp: IterDataPipe, consumer: KafkaConsumer, producer: KafkaProducer, batch_size: int = 64):
         super().__init__()
         self.dp = dp
         self.producer = producer
+        self.consumer = consumer
         self.batch_size = batch_size
-        self.req_topic = req_topic
 
     def __iter__(self):
         batch = []
         self.producer.start()
+        self.consumer.start()
         self.request_batch()
 
         for data in self.dp:
+            batch.append(data)
             if len(batch) == self.batch_size:
                 batch = self.prepare_batch(batch)
                 yield batch
                 batch = []
                 self.request_batch()
 
-            batch.append(data)
 
         if len(batch) > 0:
             batch = self.prepare_batch(batch)
@@ -60,7 +61,7 @@ class KafkaBatcherDataPipe(IterDataPipe):
     def request_batch(self):
         """This function is responsible for clearing the kafka topic and requesting a new batch of data from Group 2"""
 
-        clear_topic(self.req_topic)
+        clear_topic(self.consumer.topic_name)
         self.producer.write("BATCH")
 
     def prepare_batch(

@@ -120,7 +120,6 @@ class Streamer:
 
                 # Wait for a connection
                 connection, client_address = s.accept()
-                logging.info(f"Connection received from: {client_address}")
 
                 # Wait for the data
                 data = connection.recv(1024).decode()

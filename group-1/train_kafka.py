@@ -13,7 +13,7 @@ from tqdm.auto import tqdm
 
 # import wandb
 
-NUM_EPOCHS = 10
+NUM_BATCHES = 20
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 64
 
@@ -21,9 +21,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 config = {
-    "num_epochs": NUM_EPOCHS,
-    "learning_rate": LEARNING_RATE,
-    "batch_size": BATCH_SIZE,
+    "Num Batches": NUM_BATCHES,
+    "Learning Rate": LEARNING_RATE,
+    "Batch Size": BATCH_SIZE,
 }
 
 # wandb.init(project="kafka", config=config)
@@ -33,7 +33,7 @@ consumer = KafkaConsumer(topic_name="stream", server_name="localhost")
 producer = KafkaProducer(topic_name="req", server_name="localhost")
 dp = KafkaDataPipe(consumer)
 dp = KafkaDeserializerDataPipe(dp)
-dp = KafkaBatcherDataPipe(dp, producer, batch_size=BATCH_SIZE)
+dp = KafkaBatcherDataPipe(dp, consumer, producer, batch_size=BATCH_SIZE)
 
 train_loader = DataLoader(dp, batch_size=None, num_workers=0)
 model = torchvision.models.resnet18()
@@ -50,11 +50,13 @@ def accuracy(y_pred: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     return (y_pred == y).float().mean()
 
 
-progress_bar = tqdm(range(NUM_EPOCHS))
+progress_bar = tqdm(range(NUM_BATCHES))
 
 model.train()
 
+batch_count = 0
 for batch in train_loader:
+    batch_count += 1
     x, y = batch
     x = x.to(device) / 255.  # (batch_size, 3, 64, 64)
     y = y.to(device).unsqueeze(-1)  # (batch_size, 1)
@@ -68,6 +70,9 @@ for batch in train_loader:
 
     optimizer.step()
     progress_bar.update(1)
+
+    if batch_count == NUM_BATCHES:
+        break
 
     # wandb.log(
     #     {
