@@ -35,8 +35,7 @@ dp = KafkaDataPipe(consumer)
 dp = KafkaDeserializerDataPipe(dp)
 dp = KafkaBatcherDataPipe(dp, consumer, producer, batch_size=BATCH_SIZE)
 
-train_loader = DataLoader(dp, batch_size=None, num_workers=0)
-train_loader = PrefetchDataLoader(train_loader)
+train_loader = DataLoader(dp, batch_size=None, num_workers=1, prefetch_factor=2)
 model = torchvision.models.resnet18()
 model.fc = nn.Linear(512, 1, bias=True)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -75,7 +74,6 @@ for batch in train_loader:
     print(f"Loss: {loss.detach().cpu().item():.4f}, Accuracy: {acc.detach().cpu().item():.4f}")
     
     if batch_count == NUM_BATCHES:
-        train_loader.close()
         break
 
     # wandb.log(
