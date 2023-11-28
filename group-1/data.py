@@ -61,7 +61,7 @@ class KafkaBatcherDataPipe(IterDataPipe):
     def request_batch(self):
         """This function is responsible for clearing the kafka topic and requesting a new batch of data from Group 2"""
 
-        clear_topic(self.consumer.topic_name)
+        clear_topic()
         self.producer.write("BATCH")
 
     def prepare_batch(

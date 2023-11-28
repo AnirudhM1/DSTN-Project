@@ -46,7 +46,6 @@ class KafkaConsumer:
         self.consumer.close()
 
 
-def clear_topic(topic_name: str, server_name: str = "localhost:9092"):
-    command = os.path.join(BASE_DIR, "bin", "kafka-topics.sh")
-    subprocess.run([command, "--delete", "--topic", topic_name, "--bootstrap-server", server_name])
-    subprocess.run([command, "--create", "--topic", topic_name, "--bootstrap-server", server_name])
+def clear_topic(server_name: str = "localhost:9092"):
+    command = os.path.join(BASE_DIR, "bin", "kafka-delete-records.sh")
+    subprocess.run([command, "--bootstrap-server", server_name, "--offset-json-file", "/home/anirudh/extra/dstn/project/group-1/delete-records.json"])
