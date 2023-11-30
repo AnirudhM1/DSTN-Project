@@ -287,7 +287,7 @@ if __name__ == "__main__":
     CHUNK_SIZE = args.chunk_size
 
     # This is done to prevent some issues across operating systems
-    STORAGE_SERVERS[CURR] = "localhost"
+    # STORAGE_SERVERS[CURR] = "localhost"
 
     # Set logging
     set_logging()
