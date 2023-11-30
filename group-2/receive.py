@@ -109,7 +109,7 @@ class Receiver:
         logging.info("Starting Head Node duties...\n")
 
         # Create a Kafka consumer
-        consumer = KafkaConsumer(topic_name=TOPIC_NAME)
+        consumer = KafkaConsumer(topic_name=TOPIC_NAME, server_name="10.70.49.142")
 
         # Read data from the Kafka topic until the chunk is complete or the topic is complete
         topic_completed = self.read_and_save_data(consumer)
