@@ -445,7 +445,7 @@ if __name__ == '__main__':
     DATASET_DIR = args.dataset_dir
 
     # This is done to prevent some issues across operating systems
-    STORAGE_SERVERS[CURR] = "localhost"
+    # STORAGE_SERVERS[CURR] = "localhost"
 
     # Set the logging
     set_logging()
