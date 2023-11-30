@@ -15,7 +15,7 @@ REQ_TOPIC_NAME = None
 BATCH_SIZE = None
 DATASET_DIR = None
 
-STORAGE_SERVERS = ["10.8.1.44", "10.8.1.45", "10.8.1.48", "10.70.37.162"]
+STORAGE_SERVERS = ["10.8.1.44", "10.8.1.45", "10.8.1.48", "10.8.1.11"]
 STORAGE_PORTS = [8000, 8001, 8002, 8003]
 CURR = None  # To be set by the argument parser
 
@@ -51,10 +51,10 @@ class Streamer:
         self.is_head_node = is_head_node
 
         # Create a Kafka producer to write data to the Kafka topic
-        self.producer = KafkaProducer(topic_name=TOPIC_NAME)
+        self.producer = KafkaProducer(topic_name=TOPIC_NAME, server_name="10.70.49.142")
 
         # Create a Kafka consumer to read requests from the Kafka topic
-        self.consumer = KafkaConsumer(topic_name=REQ_TOPIC_NAME)
+        self.consumer = KafkaConsumer(topic_name=REQ_TOPIC_NAME, server_name="10.70.49.142")
 
     
     def fetch_batch(self, batch: List[int]) -> List[str]:
@@ -297,7 +297,7 @@ class Streamer:
         """This function waits for a request from group 1 for the batch of data"""
 
         # Read the request at the current offset from the Kafka topic
-        request = self.consumer.read(self.offset)
+        request = self.consumer.read()
 
         if request != 'BATCH':
             logging.error(f"Invalid request received: {request}")

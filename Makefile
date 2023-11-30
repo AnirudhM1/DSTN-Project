@@ -7,7 +7,7 @@ broker:
 	@$(KAFKA_PATH)/bin/kafka-server-start.sh config/server.properties
 
 producer:
-	@$(KAFKA_PATH)/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic $(topic)
+	@$(KAFKA_PATH)/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic $(topic)
 
 consumer:
 	@$(KAFKA_PATH)/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic $(topic) --from-beginning
@@ -27,8 +27,9 @@ clean_logs:
 	@rm -rf d2/logs
 	@rm -rf d3/logs
 	@rm -rf d4/logs
-# clean:
-# 	@rm -rf d1/*
-# 	@rm -rf d2/*
-# 	@rm -rf d3/*
-# 	@rm -rf d4/*
+
+clean:
+	@rm -rf d1/*
+	@rm -rf d2/*
+	@rm -rf d3/*
+	@rm -rf d4/*

@@ -25,10 +25,23 @@ class KafkaConsumer:
             "group.id": "0",
             "auto.offset.reset": "earliest"
         }
+        self.consumer = None
     
-    def read(self, offset, timeout: int = 1_000_000):
-        consumer = Consumer(self.config)
-        consumer.assign([TopicPartition(self.topic_name, 0, offset)])
-        msg = consumer.poll(timeout)
-        consumer.close()
+    def start(self):
+        self.consumer = Consumer(self.config)
+        self.consumer.subscribe([self.topic_name])
+    
+    def set_offset(self, offset: int):
+        self.consumer.assign([TopicPartition(self.topic_name, 0, offset)])
+
+    
+    def read(self, timeout: int = 1_000_000):
+        if self.consumer is None:
+            self.start()
+        
+        msg = self.consumer.poll(timeout)
         return msg.value().decode()
+
+    def close(self):
+        self.consumer.close()
+        self.consumer = None

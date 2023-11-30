@@ -10,8 +10,9 @@ TOPIC_NAME = None
 SAVE_DIR = None
 CHUNK_SIZE = None
 
-STORAGE_SERVERS = ["10.8.1.44", "10.8.1.45", "10.8.1.48", "10.70.37.162"]
+STORAGE_SERVERS = ["10.8.1.44", "10.8.1.45", "10.8.1.48", "10.8.1.11"]
 STORAGE_PORTS = [8000, 8001, 8002, 8003]
+TOPIC_SERVER_NAME = "10.70.49.142"
 CURR = None  # To be set by the argument parser
 
 
@@ -109,10 +110,14 @@ class Receiver:
         logging.info("Starting Head Node duties...\n")
 
         # Create a Kafka consumer
-        consumer = KafkaConsumer(topic_name=TOPIC_NAME, server_name="10.70.49.142")
+        consumer = KafkaConsumer(topic_name=TOPIC_NAME, server_name=TOPIC_SERVER_NAME)
+        consumer.start()
 
         # Read data from the Kafka topic until the chunk is complete or the topic is complete
         topic_completed = self.read_and_save_data(consumer)
+
+        # Close the consumer
+        consumer.close()
 
         # Check if the topic is complete
         if topic_completed:
@@ -136,8 +141,9 @@ class Receiver:
             bool: If the topic is complete
         """
 
+        consumer.set_offset(self.offset)
         for _ in range(CHUNK_SIZE):
-            data = consumer.read(self.offset)
+            data = consumer.read()
 
             # Check if the topic is complete
             if "complete" in data.lower():
