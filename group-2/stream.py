@@ -297,7 +297,7 @@ class Streamer:
         """This function waits for a request from group 1 for the batch of data"""
 
         # Read the request at the current offset from the Kafka topic
-        request = self.consumer.read()
+        request = self.consumer.soft_read(self.offset)
 
         if request != 'BATCH':
             logging.error(f"Invalid request received: {request}")

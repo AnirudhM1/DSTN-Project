@@ -31,6 +31,13 @@ class KafkaConsumer:
         self.consumer = Consumer(self.config)
         self.consumer.subscribe([self.topic_name])
     
+    def soft_read(self, offset, timeout: int = 1_000_000):
+        consumer = Consumer(self.config)
+        consumer.assign([TopicPartition(self.topic_name, 0, offset)])
+        msg = consumer.poll(timeout)
+        consumer.close()
+        return msg.value().decode()
+    
     def set_offset(self, offset: int):
         self.consumer.assign([TopicPartition(self.topic_name, 0, offset)])
 
