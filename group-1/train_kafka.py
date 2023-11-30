@@ -4,16 +4,16 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torchvision
 
-from data import KafkaBatcherDataPipe, KafkaDataPipe, KafkaDeserializerDataPipe, PrefetchDataLoader
+from data import KafkaBatcherDataPipe, KafkaDataPipe, KafkaDeserializerDataPipe
 from kafka import KafkaConsumer, KafkaProducer
 
 import os
 
 from tqdm.auto import tqdm
 
-# import wandb
+import wandb
 
-NUM_BATCHES = 20
+NUM_BATCHES = 60
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 64
 
@@ -26,7 +26,7 @@ config = {
     "Batch Size": BATCH_SIZE,
 }
 
-# wandb.init(project="kafka", config=config)
+wandb.init(project="kafka", config=config)
 
 
 consumer = KafkaConsumer(topic_name="stream", server_name="localhost")
@@ -71,15 +71,16 @@ for batch in train_loader:
     optimizer.step()
     progress_bar.update(1)
 
-    print(f"Loss: {loss.detach().cpu().item():.4f}, Accuracy: {acc.detach().cpu().item():.4f}")
+    batch_metrics = {
+        "Batch": batch_count,
+        "Loss": round(loss.detach().cpu().item(), 3),
+        "Accuracy": round(acc.detach().cpu().item(), 3),
+    }
+
+    progress_bar.set_postfix(batch_metrics)
     
     if batch_count == NUM_BATCHES:
         break
 
-    # wandb.log(
-    #     {
-    #         "train_loss": loss.detach().cpu().item(),
-    #         "train_accuracy": acc.detach().cpu().item(),
-    #     }
-    # )
+    wandb.log(batch_metrics)
 

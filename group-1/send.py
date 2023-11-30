@@ -5,7 +5,7 @@ from tqdm.auto import tqdm
 import torchvision.transforms as T
 from torchvision.io import read_image
 
-from kafka import KafkaProducer, KafkaServer
+from kafka import KafkaProducer
 
 DATASET_DIR = "datasets/img_align_celeba/img_align_celeba"
 LABEL_PATH = "datasets/labels.json"
@@ -40,7 +40,7 @@ producer.start()
 
 
 # Send the images and labels to the Kafka topic
-for img in tqdm(imgs[:1000]):
+for img in tqdm(imgs[:5_000]):
     producer.write(encode(img))
 
 
