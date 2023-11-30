@@ -10,7 +10,7 @@ TOPIC_NAME = None
 SAVE_DIR = None
 CHUNK_SIZE = None
 
-STORAGE_SERVERS = ["localhost", "localhost", "localhost", "localhost"]
+STORAGE_SERVERS = ["10.8.1.44", "10.8.1.45", "10.8.1.48", "10.70.37.162"]
 STORAGE_PORTS = [8000, 8001, 8002, 8003]
 CURR = None  # To be set by the argument parser
 
